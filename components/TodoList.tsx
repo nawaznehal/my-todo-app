@@ -4,7 +4,6 @@ type Todo = {
   id: number;
   task: string;
   completed: boolean;
-  createdAt: string; // added createdAt field
 };
 
 interface TodoListProps {
