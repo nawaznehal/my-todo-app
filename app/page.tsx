@@ -20,38 +20,76 @@ export default function Home() {
   }, []);
 
   const handleAddTodo = async (task: string) => {
-    const response = await fetch('/api/addTodo', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ task }),
-    });
-
-    const newTodo = await response.json();
-    setTodos([...todos, newTodo]);
+    if (!task.trim()) {
+      console.error('Task cannot be empty');
+      return;
+    }
+  
+    try {
+      const response = await fetch('/api/addTodo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task }),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to add todo');
+      }
+  
+      const newTodo = await response.json();
+      setTodos([...todos, newTodo]);
+    } catch (error) {
+      console.error('Error adding todo:', error);
+    }
   };
+  
 
   const handleToggleComplete = async (id: number) => {
     const todo = todos.find((todo) => todo.id === id);
-    const updatedTodo = await fetch(`/api/todos/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify({
-        completed: !todo.completed,
-      }),
-    }).then((res) => res.json());
-
-    setTodos(
-      todos.map((todo) =>
-        todo.id === id ? { ...todo, completed: updatedTodo.completed } : todo
-      )
-    );
+    if (!todo) return;
+  
+    try {
+      const response = await fetch(`/api/todos/${id}`, {
+        method: 'PUT',
+        // headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          completed: !todo.completed,
+        }),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to update todo');
+      }
+  
+      const updatedTodo = await response.json();
+      setTodos(
+        todos.map((todo) =>
+          todo.id === id ? { ...todo, completed: updatedTodo.completed } : todo
+        )
+      );
+    } catch (error) {
+      console.error('Error updating todo:', error);
+    }
   };
+  
 
   const handleDeleteTodo = async (id: number) => {
-    await fetch(`/api/todos/${id}`, { method: 'DELETE' });
-    setTodos(todos.filter((todo) => todo.id !== id));
+    try {
+      const response = await fetch(`/api/todos/${id}`, { method: 'DELETE' });
+  
+      // Check if the request was successful
+      if (!response.ok) {
+        throw new Error('Failed to delete todo');
+      }
+  
+      // Remove the todo from the state only after a successful delete
+      setTodos(todos.filter((todo) => todo.id !== id));
+    } catch (error) {
+      console.error('Error deleting todo:', error);
+      // Optionally, show an error message to the user here
+    }
   };
+  
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">

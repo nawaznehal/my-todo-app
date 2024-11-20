@@ -28,3 +28,5 @@ export async function deleteTodo(id: number) {
     where: { id },
   });
 }
+export default prisma;
+

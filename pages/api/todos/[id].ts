@@ -1,27 +1,55 @@
-// Example API route handler (pages/api/todos/[id].ts)
-import prisma from '../../../lib/db';
 import { NextApiRequest, NextApiResponse } from 'next';
+import prisma from '../../../lib/db';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
 
-  if (req.method === 'PUT') {
-    const { completed } = req.body;
-    if (typeof completed !== 'boolean') {
-      return res.status(400).json({ error: 'Completed must be a boolean' });
-    }
+  // Validate ID
+  const todoId = parseInt(id as string, 10);
+  if (isNaN(todoId)) {
+    return res.status(400).json({ error: 'Invalid ID' });
+  }
 
+  if (req.method === 'PUT') {
     try {
+      const { completed } = JSON.parse(req.body); // Parse JSON body
+      if (typeof completed !== 'boolean') {
+        return res.status(400).json({ error: 'Completed must be a boolean' });
+      }
+
+      // Log the request body and ID to debug
+      console.log('Updating todo with ID:', todoId);
+      console.log('Completed status:', completed);
+
+      // Update the todo
       const updatedTodo = await prisma.todo.update({
-        where: { id: Number(id) },
+        where: { id: todoId },
         data: { completed },
       });
-      res.status(200).json(updatedTodo);
+
+      // Log the updated todo to debug
+      console.log('Updated Todo:', updatedTodo);
+
+      return res.status(200).json(updatedTodo);
     } catch (error) {
       console.error('Error updating todo:', error);
-      res.status(500).json({ error: 'Failed to update todo' });
+      return res.status(500).json({ error: 'Failed to update todo' });
+    }
+  } else if (req.method === 'DELETE') {
+    try {
+      // Delete the todo
+      await prisma.todo.delete({
+        where: { id: todoId },
+      });
+
+      return res.status(200).json({ message: 'Todo deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting todo:', error);
+      return res.status(500).json({ error: 'Failed to delete todo' });
     }
   } else {
-    res.status(405).json({ error: 'Method Not Allowed' });
+    // If method is not allowed
+    res.setHeader('Allow', ['PUT', 'DELETE']);
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 }
