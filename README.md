@@ -10,8 +10,7 @@ Tech Stack:
 
 Setup & Installation:
 1. Clone the repository:
-   `git clone https://github.com/your-username/todo-app.git`
-   `cd todo-app`
+   `git clone https://github.com/nawaznehal/my-todo-app.git
 2. Install dependencies:
    `npm install`
 3. Setup the database and run Prisma migration:
