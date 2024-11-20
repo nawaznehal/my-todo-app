@@ -1,15 +1,12 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import AddTodoForm from '../components/AddTodoForm';
-import dynamic from 'next/dynamic';
 
-// Dynamically import TodoList with a loading state
-const DynamicTodoList = dynamic(() => import('../components/TodoList'), {
-  loading: () => <p>Loading To-Do List...</p>, // loading message
-});
+// Lazy load TodoList with a fallback UI
+const TodoList = lazy(() => import('../components/TodoList'));
 
 type Todo = {
   id: number;
@@ -22,7 +19,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
-    // Fetch todos from the server when the component mounts
+    // Fetch todos when the component mounts
     const fetchTodos = async () => {
       try {
         const response = await fetch('/api/todos');
@@ -30,11 +27,7 @@ export default function Home() {
           throw new Error('Failed to fetch todos');
         }
         const data = await response.json();
-        if (Array.isArray(data)) {
-          setTodos(data);
-        } else {
-          console.error('Fetched data is not an array:', data);
-        }
+        setTodos(data);
       } catch (error) {
         console.error('Error fetching todos:', error);
       }
@@ -47,10 +40,12 @@ export default function Home() {
     setSearchQuery(event.target.value);
   };
 
-  const filteredTodos = todos.filter(todo =>
+  const filteredTodos = todos.filter((todo) =>
     todo.task.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+
+  //user validation
   const handleAddTodo = async (task: string) => {
     if (!task.trim()) {
       console.error('Task cannot be empty');
@@ -128,15 +123,22 @@ export default function Home() {
           placeholder="Search tasks..."
           value={searchQuery}
           onChange={handleSearchChange}
-          className="w-full px-4 py-2 mb-4 border rounded-lg shadow-sm"
+          className="w-full px-4 py-2 mb-4 border rounded-lg shadow-sm text-blue-500"
         />
         
         {/* Add Todo Form */}
         <AddTodoForm onAdd={handleAddTodo} />
         
-        {/* Dynamically Loaded Todo List */}
-        <Suspense fallback={<p>Loading To-Do List...</p>}>
-          <DynamicTodoList
+        {/* Lazy Loaded Todo List */}
+        <Suspense
+          fallback={
+            <div className="flex justify-center items-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+              <span className="ml-2 text-gray-600">Loading To-Do List...</span>
+            </div>
+          }
+        >
+          <TodoList
             todos={filteredTodos}
             onToggleComplete={handleToggleComplete}
             onDelete={handleDeleteTodo}

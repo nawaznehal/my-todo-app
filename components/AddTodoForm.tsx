@@ -16,13 +16,13 @@ const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAdd }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-4">
+    <form onSubmit={handleSubmit} className="flex gap-4 m-4">
       <input
         type="text"
         value={task}
         onChange={(e) => setTask(e.target.value)}
         placeholder="Enter a new task"
-        className="p-2 border rounded"
+        className="p-2 border rounded text-blue-500"
       />
       <button type="submit" className="bg-blue-500 text-white p-2 rounded">
         Add Todo
