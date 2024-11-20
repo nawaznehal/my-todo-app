@@ -6,6 +6,7 @@ import prisma from '../../../lib/prisma';
 export async function GET() {
   try {
     const todos = await prisma.todo.findMany();
+    console.log('Fetched todos:', todos); // Log the todos
     return NextResponse.json(todos);
 } catch (error: unknown) {
     if (error instanceof Error) {
@@ -24,6 +25,7 @@ export async function POST(req: Request) {
 
   try {
     const newTodo = await prisma.todo.create({ data: { task, completed: false } });
+    console.log('Created todo:', newTodo);
     return NextResponse.json(newTodo, { status: 201 });
 } catch (error: unknown) {
     if (error instanceof Error) {
