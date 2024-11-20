@@ -17,10 +17,22 @@ export default function Home() {
   useEffect(() => {
     // Fetch todos from the server when the component mounts
     const fetchTodos = async () => {
-      const response = await fetch('/api/todos');
-      const data = await response.json();
-      setTodos(data);
+      try {
+        const response = await fetch('/api/todos');
+        if (!response.ok) {
+          throw new Error('Failed to fetch todos');
+        }
+        const data = await response.json();
+        if (Array.isArray(data)) {
+          setTodos(data);
+        } else {
+          console.error('Fetched data is not an array:', data);
+        }
+      } catch (error) {
+        console.error('Error fetching todos:', error);
+      }
     };
+    
     fetchTodos();
   }, []);
 
