@@ -8,6 +8,7 @@ export async function GET() {
     const todos = await prisma.todo.findMany();
     return NextResponse.json(todos);
   } catch (error) {
+    console.error(error);
     return NextResponse.json({ error: 'Failed to fetch todos' }, { status: 500 });
   }
 }
@@ -23,6 +24,7 @@ export async function POST(req: Request) {
     const newTodo = await prisma.todo.create({ data: { task, completed: false } });
     return NextResponse.json(newTodo, { status: 201 });
   } catch (error) {
+    console.error(error);
     return NextResponse.json({ error: 'Failed to add todo' }, { status: 500 });
   }
 }

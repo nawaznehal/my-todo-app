@@ -6,8 +6,13 @@ import Footer from '../components/Footer';
 import TodoList from '../components/TodoList';
 import AddTodoForm from '../components/AddTodoForm';
 
+type Todo = {
+  id: number;
+  task: string;
+  completed: boolean;
+};
 export default function Home() {
-  const [todos, setTodos] = useState<any[]>([]);
+  const [todos, setTodos] = useState<Todo[]>([]);
 
   useEffect(() => {
     // Fetch todos from the server when the component mounts

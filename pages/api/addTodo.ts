@@ -15,6 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const newTodo = await prisma.todo.create({ data: { task, completed: false } });
       res.status(201).json(newTodo);
     } catch (error) {
+      console.error(error);
       res.status(500).json({ error: 'Failed to add todo' });
     }
   } else {
