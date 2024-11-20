@@ -1,42 +1,27 @@
-// /pages/api/todos/[id].ts
+// Example API route handler (pages/api/todos/[id].ts)
+import prisma from '../../../lib/db';
+import { NextApiRequest, NextApiResponse } from 'next';
 
-import prisma from '../../../lib/prisma';
-import type { NextApiRequest, NextApiResponse } from 'next';
-
-// Handle PUT and DELETE for a specific todo by ID
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { id } = req.query;
 
-  if (typeof id !== 'string') {
-    return res.status(400).json({ error: 'Invalid ID' });
-  }
-
   if (req.method === 'PUT') {
     const { completed } = req.body;
-
-    if (completed === undefined) {
-      return res.status(400).json({ error: 'Completed status is required' });
+    if (typeof completed !== 'boolean') {
+      return res.status(400).json({ error: 'Completed must be a boolean' });
     }
 
     try {
       const updatedTodo = await prisma.todo.update({
-        where: { id: parseInt(id) },
+        where: { id: Number(id) },
         data: { completed },
       });
-      return res.status(200).json(updatedTodo);
+      res.status(200).json(updatedTodo);
     } catch (error) {
-      return res.status(500).json({ error: 'Failed to update todo' });
-    }
-  } else if (req.method === 'DELETE') {
-    try {
-      await prisma.todo.delete({
-        where: { id: parseInt(id) },
-      });
-      return res.status(204).end(); // No content, successfully deleted
-    } catch (error) {
-      return res.status(500).json({ error: 'Failed to delete todo' });
+      console.error('Error updating todo:', error);
+      res.status(500).json({ error: 'Failed to update todo' });
     }
   } else {
-    return res.status(405).json({ error: 'Method not allowed' });
+    res.status(405).json({ error: 'Method Not Allowed' });
   }
 }
