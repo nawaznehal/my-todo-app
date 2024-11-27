@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import AddTodoForm from '../components/AddTodoForm';
@@ -18,24 +18,6 @@ export default function Home() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  useEffect(() => {
-    // Fetch todos when the component mounts
-    const fetchTodos = async () => {
-      try {
-        const response = await fetch('/api/todos');
-        if (!response.ok) {
-          throw new Error('Failed to fetch todos');
-        }
-        const data = await response.json();
-        setTodos(data);
-      } catch (error) {
-        console.error('Error fetching todos:', error);
-      }
-    };
-
-    fetchTodos();
-  }, []);
-
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
   };
@@ -44,8 +26,6 @@ export default function Home() {
     todo.task.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-
-  //user validation
   const handleAddTodo = async (task: string) => {
     if (!task.trim()) {
       console.error('Task cannot be empty');
@@ -111,12 +91,25 @@ export default function Home() {
     }
   };
 
+  const fetchTodos = async () => {
+    try {
+      const response = await fetch('/api/todos');
+      if (!response.ok) {
+        throw new Error('Failed to fetch todos');
+      }
+      const data = await response.json();
+      setTodos(data);
+    } catch (error) {
+      console.error('Error fetching todos:', error);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <Header />
       <main className="flex-1 p-6">
         <h1 className="text-3xl font-bold text-center mb-6 text-gray-900">My To-Do List</h1>
-        
+
         {/* Search Input */}
         <input
           type="text"
@@ -125,10 +118,18 @@ export default function Home() {
           onChange={handleSearchChange}
           className="w-full px-4 py-2 mb-4 border rounded-lg shadow-sm text-blue-500"
         />
-        
+
         {/* Add Todo Form */}
         <AddTodoForm onAdd={handleAddTodo} />
-        
+
+        {/* Fetch Button */}
+        <button
+          onClick={fetchTodos}
+          className="mb-4 py-2 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+        >
+          Load Todos
+        </button>
+
         {/* Lazy Loaded Todo List */}
         <Suspense
           fallback={
