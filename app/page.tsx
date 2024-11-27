@@ -126,7 +126,7 @@ function ClientTodoComponent({ initialTodos }: { initialTodos: Todo[] }) {
 // Server Component to fetch data
 async function fetchTodos(): Promise<Todo[]> {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/todos`, {
+    const response = await fetch(`${process.env.DATABASE_URL}/api/todos`, {
       cache: 'no-store',
     });
     
