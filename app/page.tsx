@@ -1,4 +1,5 @@
-// "use client" - This is a client-side component
+"use client"
+
 import React, { lazy, Suspense } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
