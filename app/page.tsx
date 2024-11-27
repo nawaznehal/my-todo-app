@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import AddTodoForm from '../components/AddTodoForm';
@@ -14,27 +14,9 @@ type Todo = {
   completed: boolean;
 };
 
-export default function Home() {
-  const [todos, setTodos] = useState<Todo[]>([]);
+export default function Home({ initialTodos }: { initialTodos: Todo[] }) {
+  const [todos, setTodos] = useState<Todo[]>(initialTodos);
   const [searchQuery, setSearchQuery] = useState<string>('');
-
-  useEffect(() => {
-    // Fetch todos when the component mounts
-    const fetchTodos = async () => {
-      try {
-        const response = await fetch('/api/todos');
-        if (!response.ok) {
-          throw new Error('Failed to fetch todos');
-        }
-        const data = await response.json();
-        setTodos(data);
-      } catch (error) {
-        console.error('Error fetching todos:', error);
-      }
-    };
-
-    fetchTodos();
-  }, []);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
@@ -44,8 +26,6 @@ export default function Home() {
     todo.task.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-
-  //user validation
   const handleAddTodo = async (task: string) => {
     if (!task.trim()) {
       console.error('Task cannot be empty');
@@ -77,6 +57,7 @@ export default function Home() {
     try {
       const response = await fetch(`/api/todos/${id}`, {
         method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           completed: !todo.completed,
         }),
@@ -148,4 +129,23 @@ export default function Home() {
       <Footer />
     </div>
   );
+}
+
+// Server-Side Rendering (SSR) Function
+export async function getServerSideProps() {
+  try {
+    const response = await fetch(`${process.env.API_BASE_URL}/api/todos`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch todos');
+    }
+    const initialTodos = await response.json();
+    return {
+      props: { initialTodos },
+    };
+  } catch (error) {
+    console.error('Error fetching todos on server:', error);
+    return {
+      props: { initialTodos: [] },
+    };
+  }
 }
