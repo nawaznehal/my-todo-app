@@ -88,23 +88,16 @@ function ClientTodoComponent({ initialTodos }: { initialTodos: Todo[] }) {
   };
 
   const handleToggleComplete = async (id: number) => {
-    const todoIndex = todos.findIndex((todo) => todo.id === id);
-    if (todoIndex === -1) return; // Ensure the todo exists
-  
-    const updatedTodos = [...todos];
-    updatedTodos[todoIndex] = {
-      ...updatedTodos[todoIndex],
-      completed: !updatedTodos[todoIndex].completed, // Toggle locally
-    };
-  
-    // Optimistically update UI
-    setTodos(updatedTodos);
+    const todo = todos.find((todo) => todo.id === id);
+    if (!todo) return;
   
     try {
       const response = await fetch(`/api/todos/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ completed: updatedTodos[todoIndex].completed }),
+        body: JSON.stringify({
+          completed: !todo.completed, // Toggle the completion status
+        }),
       });
   
       if (!response.ok) {
@@ -112,7 +105,8 @@ function ClientTodoComponent({ initialTodos }: { initialTodos: Todo[] }) {
       }
   
       const updatedTodo = await response.json();
-      // Sync with server response
+  
+      // Update the local state with the new todo
       setTodos((prevTodos) =>
         prevTodos.map((todo) =>
           todo.id === id ? { ...todo, completed: updatedTodo.completed } : todo
@@ -120,12 +114,9 @@ function ClientTodoComponent({ initialTodos }: { initialTodos: Todo[] }) {
       );
     } catch (error) {
       console.error('Error updating todo:', error);
-  
-      // Revert UI if API call fails
-      updatedTodos[todoIndex].completed = !updatedTodos[todoIndex].completed;
-      setTodos(updatedTodos);
     }
   };
+  
   
 
   const handleDeleteTodo = async (id: number) => {
