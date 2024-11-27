@@ -17,18 +17,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: 'Completed must be a boolean' });
       }
 
-      // Log the request body and ID to debug
-      console.log('Updating todo with ID:', todoId);
-      console.log('Completed status:', completed);
-
       // Update the todo
       const updatedTodo = await prisma.todo.update({
         where: { id: todoId },
         data: { completed },
       });
-
-      // Log the updated todo to debug
-      console.log('Updated Todo:', updatedTodo);
 
       return res.status(200).json(updatedTodo);
     } catch (error) {
