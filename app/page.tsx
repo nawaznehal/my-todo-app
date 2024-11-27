@@ -1,5 +1,4 @@
-"use client";
-
+// "use client" - This is a client-side component
 import React, { lazy, Suspense } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -126,7 +125,7 @@ function ClientTodoComponent({ initialTodos }: { initialTodos: Todo[] }) {
 // Server Component to fetch data
 async function fetchTodos(): Promise<Todo[]> {
   try {
-    const response = await fetch(`${process.env.API_BASE_URL}/api/todos`, {
+    const response = await fetch(`${process.env.DATABASE_URL}/api/todos`, {
       cache: 'no-store', // Disable caching for up-to-date data
     });
 
