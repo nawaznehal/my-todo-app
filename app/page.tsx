@@ -1,6 +1,4 @@
-'use client';
-
-import React, { useState, lazy, Suspense } from 'react';
+import React, { lazy, Suspense } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import AddTodoForm from '../components/AddTodoForm';
@@ -14,9 +12,46 @@ type Todo = {
   completed: boolean;
 };
 
-export default function Home({ initialTodos }: { initialTodos: Todo[] }) {
-  const [todos, setTodos] = useState<Todo[]>(initialTodos);
-  const [searchQuery, setSearchQuery] = useState<string>('');
+// Server Component to fetch data
+async function fetchTodos(): Promise<Todo[]> {
+  try {
+    const response = await fetch(`${process.env.API_BASE_URL}/api/todos`, {
+      cache: 'no-store', // Disable caching for up-to-date data
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch todos');
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching todos on server:', error);
+    return [];
+  }
+}
+
+// Main Page Component
+export default async function Home() {
+  const todos = await fetchTodos();
+
+  return (
+    <div className="flex flex-col min-h-screen bg-gray-100">
+      <Header />
+      <main className="flex-1 p-6">
+        <h1 className="text-3xl font-bold text-center mb-6 text-gray-900">My To-Do List</h1>
+        
+        {/* Search and Add Todo */}
+        <ClientTodoComponent initialTodos={todos} />
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+// Client Component for interactive functionality
+function ClientTodoComponent({ initialTodos }: { initialTodos: Todo[] }) {
+  const [todos, setTodos] = React.useState(initialTodos);
+  const [searchQuery, setSearchQuery] = React.useState<string>('');
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
@@ -93,59 +128,29 @@ export default function Home({ initialTodos }: { initialTodos: Todo[] }) {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100">
-      <Header />
-      <main className="flex-1 p-6">
-        <h1 className="text-3xl font-bold text-center mb-6 text-gray-900">My To-Do List</h1>
-        
-        {/* Search Input */}
-        <input
-          type="text"
-          placeholder="Search tasks..."
-          value={searchQuery}
-          onChange={handleSearchChange}
-          className="w-full px-4 py-2 mb-4 border rounded-lg shadow-sm text-blue-500"
+    <>
+      <input
+        type="text"
+        placeholder="Search tasks..."
+        value={searchQuery}
+        onChange={handleSearchChange}
+        className="w-full px-4 py-2 mb-4 border rounded-lg shadow-sm text-blue-500"
+      />
+      <AddTodoForm onAdd={handleAddTodo} />
+      <Suspense
+        fallback={
+          <div className="flex justify-center items-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+            <span className="ml-2 text-gray-600">Loading To-Do List...</span>
+          </div>
+        }
+      >
+        <TodoList
+          todos={filteredTodos}
+          onToggleComplete={handleToggleComplete}
+          onDelete={handleDeleteTodo}
         />
-        
-        {/* Add Todo Form */}
-        <AddTodoForm onAdd={handleAddTodo} />
-        
-        {/* Lazy Loaded Todo List */}
-        <Suspense
-          fallback={
-            <div className="flex justify-center items-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-              <span className="ml-2 text-gray-600">Loading To-Do List...</span>
-            </div>
-          }
-        >
-          <TodoList
-            todos={filteredTodos}
-            onToggleComplete={handleToggleComplete}
-            onDelete={handleDeleteTodo}
-          />
-        </Suspense>
-      </main>
-      <Footer />
-    </div>
+      </Suspense>
+    </>
   );
-}
-
-// Server-Side Rendering (SSR) Function
-export async function getServerSideProps() {
-  try {
-    const response = await fetch(`${process.env.API_BASE_URL}/api/todos`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch todos');
-    }
-    const initialTodos = await response.json();
-    return {
-      props: { initialTodos },
-    };
-  } catch (error) {
-    console.error('Error fetching todos on server:', error);
-    return {
-      props: { initialTodos: [] },
-    };
-  }
 }
