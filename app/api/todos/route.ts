@@ -1,36 +1,51 @@
-// /app/api/todos/route.ts
-
+import { PrismaClient } from '@prisma/client';
 import { NextResponse } from 'next/server';
-import prisma from '../../../lib/prisma';
 
-export async function GET() {
-  try {
-    const todos = await prisma.todo.findMany();
-    console.log('Fetched todos:', todos); // Log the todos
-    return NextResponse.json(todos);
-} catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error(error.message); // Log the error message
-    }
-    return NextResponse.json({ error: 'Failed to fetch todos' }, { status: 500 });
-  }
-}
+const prisma = new PrismaClient();
 
+// Create a new Todo
 export async function POST(req: Request) {
   const { task } = await req.json();
 
-  if (!task) {
-    return NextResponse.json({ error: 'Task is required' }, { status: 400 });
+  if (!task || typeof task !== 'string') {
+    return NextResponse.json({ error: 'Invalid task' }, { status: 400 });
   }
 
-  try {
-    const newTodo = await prisma.todo.create({ data: { task, completed: false } });
-    console.log('Created todo:', newTodo);
-    return NextResponse.json(newTodo, { status: 201 });
-} catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error(error.message); // Log the error message
-    }
-    return NextResponse.json({ error: 'Failed to add todo' }, { status: 500 });
+  const newTodo = await prisma.todo.create({
+    data: { task },
+  });
+
+  return NextResponse.json(newTodo, { status: 201 });
+}
+
+// Update Todo (e.g., toggle complete)
+export async function PUT(req: Request) {
+  const { id, completed } = await req.json();
+
+  if (!id || typeof completed !== 'boolean') {
+    return NextResponse.json({ error: 'Invalid data' }, { status: 400 });
   }
+
+  const updatedTodo = await prisma.todo.update({
+    where: { id },
+    data: { completed },
+  });
+
+  return NextResponse.json(updatedTodo, { status: 200 });
+}
+
+// Delete a Todo
+export async function DELETE(req: Request) {
+  const url = new URL(req.url);
+  const id = url.searchParams.get('id');
+
+  if (!id) {
+    return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+  }
+
+  await prisma.todo.delete({
+    where: { id: parseInt(id) },
+  });
+
+  return NextResponse.json({ message: 'Todo deleted successfully' });
 }

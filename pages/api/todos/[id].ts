@@ -1,55 +1,58 @@
+// pages/api/todos/[id].ts
+
 import { NextApiRequest, NextApiResponse } from 'next';
-import prisma from '../../../lib/db';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { id } = req.query;
+  const { id } = req.query; // Extract todo id from the query parameters
 
-  // Validate ID
-  const todoId = parseInt(id as string, 10);
-  if (isNaN(todoId)) {
+  // Ensure the id is a valid number
+  if (typeof id !== 'string' || isNaN(Number(id))) {
     return res.status(400).json({ error: 'Invalid ID' });
   }
 
+  // Handling PUT request to update a todo item
   if (req.method === 'PUT') {
     try {
-      const { completed } = JSON.parse(req.body); // Parse JSON body
+      const { completed } = req.body; // Get the completed status from the request body
+
+      // Check if the completed field is a boolean
       if (typeof completed !== 'boolean') {
-        return res.status(400).json({ error: 'Completed must be a boolean' });
+        return res.status(400).json({ error: 'Completed field must be a boolean' });
       }
 
-      // Log the request body and ID to debug
-      console.log('Updating todo with ID:', todoId);
-      console.log('Completed status:', completed);
-
-      // Update the todo
+      // Update the todo item in the database
       const updatedTodo = await prisma.todo.update({
-        where: { id: todoId },
+        where: { id: Number(id) },
         data: { completed },
       });
 
-      // Log the updated todo to debug
-      console.log('Updated Todo:', updatedTodo);
+      return res.status(200).json(updatedTodo); // Respond with the updated todo
 
-      return res.status(200).json(updatedTodo);
     } catch (error) {
-      console.error('Error updating todo:', error);
-      return res.status(500).json({ error: 'Failed to update todo' });
+      console.error(error);
+      return res.status(500).json({ error: 'Failed to update todo' }); // Handle server errors
     }
-  } else if (req.method === 'DELETE') {
+  }
+
+  // Handling DELETE request to delete a todo item
+  if (req.method === 'DELETE') {
     try {
-      // Delete the todo
+      // Delete the todo item from the database
       await prisma.todo.delete({
-        where: { id: todoId },
+        where: { id: Number(id) },
       });
 
-      return res.status(200).json({ message: 'Todo deleted successfully' });
+      return res.status(204).end(); // Return No Content status (successful deletion)
+
     } catch (error) {
-      console.error('Error deleting todo:', error);
-      return res.status(500).json({ error: 'Failed to delete todo' });
+      console.error(error);
+      return res.status(500).json({ error: 'Failed to delete todo' }); // Handle server errors
     }
-  } else {
-    // If method is not allowed
-    res.setHeader('Allow', ['PUT', 'DELETE']);
-    return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  // If the method is neither PUT nor DELETE, return Method Not Allowed status
+  return res.status(405).json({ error: 'Method Not Allowed' });
 }

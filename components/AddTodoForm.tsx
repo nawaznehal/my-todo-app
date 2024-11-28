@@ -1,4 +1,4 @@
-'use client'; 
+'use client';
 
 import React, { useState } from 'react';
 
@@ -9,10 +9,16 @@ interface AddTodoFormProps {
 const AddTodoForm: React.FC<AddTodoFormProps> = ({ onAdd }) => {
   const [task, setTask] = useState('');
 
-  const handleClick = () => {
+  const handleClick = async () => {
     if (task) {
-      onAdd(task);
+      // Trigger the add action (this is handled by a server-side request)
+      await fetch('/api/todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task }),
+      });
       setTask(''); // Clear the input field after submitting
+      // Optionally trigger a re-fetch or state update here
     }
   };
 

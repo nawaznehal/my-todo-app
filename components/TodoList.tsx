@@ -1,33 +1,66 @@
-interface Todo {
+'use client';
+
+import React, { useState } from 'react';
+
+type Todo = {
   id: number;
   task: string;
   completed: boolean;
-}
+};
 
-interface TodoListProps {
+type Props = {
   todos: Todo[];
-  onToggleComplete: (id: number) => void;
-  onDelete: (id: number) => void;
-}
+};
 
-const TodoList: React.FC<TodoListProps> = ({ todos, onToggleComplete, onDelete }) => {
+export default function TodoList({ todos }: Props) {
+  const [currentTodos, setCurrentTodos] = useState(todos);
+
+  const handleToggleComplete = async (id: number) => {
+    // Toggle the completion status of the todo
+    await fetch(`/api/todos/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        completed: !currentTodos.find((todo) => todo.id === id)?.completed,
+      }),
+    });
+
+    // Update the state with the new completion status
+    setCurrentTodos((prevTodos) =>
+      prevTodos.map((todo) =>
+        todo.id === id ? { ...todo, completed: !todo.completed } : todo
+      )
+    );
+  };
+
+  const handleDelete = async (id: number) => {
+    // Delete the todo item
+    await fetch(`/api/todos/${id}`, { method: 'DELETE' });
+
+    // Remove the deleted todo from the state
+    setCurrentTodos((prevTodos) => prevTodos.filter((todo) => todo.id !== id));
+  };
+
   return (
     <ul className="space-y-4">
-      {todos.map((todo) => (
-        <li key={todo.id} className="flex justify-between items-center bg-white p-4 border rounded-lg shadow-sm hover:bg-gray-50">
-          <span className={`text-gray-900 ${todo.completed ? 'text-gray-500' : ''}`}>
-            {todo.task}
-          </span>
-          <div className="flex space-x-2">
+      {currentTodos.map((todo) => (
+        <li
+          key={todo.id}
+          className={`flex items-center justify-between p-4 bg-white rounded-lg shadow ${
+            todo.completed ? 'line-through text-gray-400' : ''
+          }`}
+        >
+          <span>{todo.task}</span>
+          <div>
             <button
-              onClick={() => onToggleComplete(todo.id)}
-              className={`px-4 py-1 rounded text-white ${todo.completed ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-green-500 hover:bg-green-600'}`}
+              onClick={() => handleToggleComplete(todo.id)}
+              className="mr-2 px-3 py-1 text-sm bg-green-500 text-white rounded-lg"
             >
-              {todo.completed ? 'Mark Incomplete' : 'Mark Complete'}
+              {todo.completed ? 'Undo' : 'Complete'}
             </button>
             <button
-              onClick={() => onDelete(todo.id)}
-              className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
+              onClick={() => handleDelete(todo.id)}
+              className="px-3 py-1 text-sm bg-red-500 text-white rounded-lg"
             >
               Delete
             </button>
@@ -36,7 +69,4 @@ const TodoList: React.FC<TodoListProps> = ({ todos, onToggleComplete, onDelete }
       ))}
     </ul>
   );
-};
-
-
-export default TodoList;
+}

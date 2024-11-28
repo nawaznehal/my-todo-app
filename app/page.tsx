@@ -1,108 +1,25 @@
-'use client';
-
-import React, { useState, lazy, Suspense } from 'react';
+import React, { Suspense } from 'react';
+import { PrismaClient } from '@prisma/client';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import AddTodoForm from '../components/AddTodoForm';
 
-// Lazy load TodoList with a fallback UI
-const TodoList = lazy(() => import('../components/TodoList'));
+// Lazy load TodoList and AddTodoForm components
+const TodoList = React.lazy(() => import('../components/TodoList'));
+const AddTodoForm = React.lazy(() => import('../components/AddTodoForm'));
 
-type Todo = {
-  id: number;
-  task: string;
-  completed: boolean;
-};
+const prisma = new PrismaClient();
 
-export default function Home() {
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [searchQuery, setSearchQuery] = useState<string>('');
+// Fetch todos from the database (Server Component)
+async function fetchTodos() {
+  return await prisma.todo.findMany({
+    orderBy: { createdAt: 'desc' },
+  });
+}
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(event.target.value);
-  };
+export default async function Home() {
+  const todos = await fetchTodos();
 
-  const filteredTodos = todos.filter((todo) =>
-    todo.task.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleAddTodo = async (task: string) => {
-    if (!task.trim()) {
-      console.error('Task cannot be empty');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/addTodo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ task }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to add todo');
-      }
-
-      const newTodo = await response.json();
-      setTodos([...todos, newTodo]);
-    } catch (error) {
-      console.error('Error adding todo:', error);
-    }
-  };
-
-  const handleToggleComplete = async (id: number) => {
-    const todo = todos.find((todo) => todo.id === id);
-    if (!todo) return;
-
-    try {
-      const response = await fetch(`/api/todos/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          completed: !todo.completed,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update todo');
-      }
-
-      const updatedTodo = await response.json();
-      setTodos(
-        todos.map((todo) =>
-          todo.id === id ? { ...todo, completed: updatedTodo.completed } : todo
-        )
-      );
-    } catch (error) {
-      console.error('Error updating todo:', error);
-    }
-  };
-
-  const handleDeleteTodo = async (id: number) => {
-    try {
-      const response = await fetch(`/api/todos/${id}`, { method: 'DELETE' });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete todo');
-      }
-
-      setTodos(todos.filter((todo) => todo.id !== id));
-    } catch (error) {
-      console.error('Error deleting todo:', error);
-    }
-  };
-
-  const fetchTodos = async () => {
-    try {
-      const response = await fetch('/api/todos');
-      if (!response.ok) {
-        throw new Error('Failed to fetch todos');
-      }
-      const data = await response.json();
-      setTodos(data);
-    } catch (error) {
-      console.error('Error fetching todos:', error);
-    }
-  };
+  
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
@@ -110,40 +27,13 @@ export default function Home() {
       <main className="flex-1 p-6">
         <h1 className="text-3xl font-bold text-center mb-6 text-gray-900">My To-Do List</h1>
 
-        {/* Search Input */}
-        <input
-          type="text"
-          placeholder="Search tasks..."
-          value={searchQuery}
-          onChange={handleSearchChange}
-          className="w-full px-4 py-2 mb-4 border rounded-lg shadow-sm text-blue-500"
-        />
+        {/* Suspense to handle lazy loading */}
+        <Suspense fallback={<div>Loading...</div>}>
+          {/* Add Todo Form */}
+          <AddTodoForm />
 
-        {/* Add Todo Form */}
-        <AddTodoForm onAdd={handleAddTodo} />
-
-        {/* Fetch Button */}
-        <button
-          onClick={fetchTodos}
-          className="mb-4 py-2 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-        >
-          Load Todos
-        </button>
-
-        {/* Lazy Loaded Todo List */}
-        <Suspense
-          fallback={
-            <div className="flex justify-center items-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
-              <span className="ml-2 text-gray-600">Loading To-Do List...</span>
-            </div>
-          }
-        >
-          <TodoList
-            todos={filteredTodos}
-            onToggleComplete={handleToggleComplete}
-            onDelete={handleDeleteTodo}
-          />
+          {/* Todo List */}
+          <TodoList todos={todos} />
         </Suspense>
       </main>
       <Footer />
